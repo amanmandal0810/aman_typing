@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Master</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #141e30, #243b55);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .game {
+        width: 95%;
+        max-width: 900px;
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+        text-align: center;
+        color: #00e5ff;
+        margin-top: 0;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .stat {
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .stat span {
+        display: block;
+        font-size: 24px;
+        font-weight: bold;
+        color: #00e5ff;
+        margin-top: 5px;
+    }
+
+    .progress-container {
+        height: 10px;
+        background: #333;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+    .progress {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #00e5ff, #00ff88);
+        transition: width 0.3s;
+    }
+
+    .text-box {
+        background: #101820;
+        padding: 25px;
+        border-radius: 15px;
+        font-size: 25px;
+        line-height: 1.7;
+        min-height: 140px;
+        margin-bottom: 20px;
+        letter-spacing: 1px;
+    }
+
+    .correct {
+        color: #00ff88;
+    }
+
+    .incorrect {
+        color: #ff4d6d;
+        text-decoration: underline;
+    }
+
+    .current {
+        background: #00e5ff;
+        color: #111;
+        border-radius: 3px;
+        padding: 2px;
+    }
+
+    textarea {
+        width: 100%;
+        height: 120px;
+        resize: none;
+        border: none;
+        outline: none;
+        border-radius: 12px;
+        padding: 18px;
+        font-size: 20px;
+        font-family: inherit;
+        background: #fff;
+        color: #111;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    button {
+        border: none;
+        padding: 13px 25px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        background: #00e5ff;
+        color: #111;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+        background: #00ff88;
+    }
+
+    .message {
+        text-align: center;
+        font-size: 20px;
+        margin-top: 20px;
+        min-height: 30px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .game-over {
+        text-align: center;
+        padding: 30px;
+    }
+
+    .game-over h2 {
+        color: #00ff88;
+        font-size: 35px;
+    }
+
+    @media (max-width: 700px) {
+        .stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .text-box {
+            font-size: 19px;
+        }
+
+        .game {
+            padding: 20px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>?? Typing Master</h1>
+
+    <div id="gameArea">
+
+        <div class="stats">
+            <div class="stat">
+                Level
+                <span id="level">1</span>
+            </div>
+
+            <div class="stat">
+                Time
+                <span id="time">30</span>
+            </div>
+
+            <div class="stat">
+                WPM
+                <span id="wpm">0</span>
+            </div>
+
+            <div class="stat">
+                Accuracy
+                <span id="accuracy">100%</span>
+            </div>
+
+            <div class="stat">
+                Score
+                <span id="score">0</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress" id="progress"></div>
+        </div>
+
+        <div class="text-box" id="textDisplay"></div>
+
+        <textarea
+            id="input"
+            placeholder="Start typing here..."
+            disabled
+            autocomplete="off"
+            spellcheck="false"></textarea>
+
+        <div class="buttons">
+            <button id="startBtn">Start Game</button>
+            <button id="restartBtn">Restart</button>
+        </div>
+
+        <div class="message" id="message"></div>
+
+    </div>
+
+    <div id="gameOver" class="game-over hidden">
+        <h2>?? Game Complete!</h2>
+
+        <p>Your final score:</p>
+        <h2 id="finalScore">0</h2>
+
+        <p>Best Score: <strong id="bestScore">0</strong></p>
+
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+</div>
+
+<script>
+
+const levels = [
+
+    // Level 1
+    [
+        "cat",
+        "dog",
+        "sun",
+        "book",
+        "tree",
+        "home",
+        "game",
+        "school",
+        "mouse",
+        "water"
+    ],
+
+    // Level 2
+    [
+        "The sun is bright",
+        "I love typing",
+        "Practice makes perfect",
+        "The cat is sleeping",
+        "Learning is fun",
+        "Keep your fingers moving"
+    ],
+
+    // Level 3
+    [
+        "Typing quickly requires regular practice",
+        "Always look at the screen while typing",
+        "Accuracy is more important than speed",
+        "Keep your hands in the correct position",
+        "Good typing skills save a lot of time"
+    ],
+
+    // Level 4
+    [
+        "The quick brown fox jumps over the lazy dog",
+        "Technology is changing the way we communicate",
+        "Programming requires patience practice and creativity",
+        "A fast typist can write ideas without losing focus"
+    ],
+
+    // Level 5
+    [
+        "Success comes from consistent practice and determination",
+        "The more accurately you type the faster you will become",
+        "Developing good typing habits will improve your productivity",
+        "Great programmers spend a lot of time communicating their ideas"
+    ]
+
+];
+
+let level = 1;
+let currentText = "";
+let startTime = 0;
+let timer = null;
+let timeLeft = 30;
+let score = 0;
+let mistakes = 0;
+let totalTyped = 0;
+let started = false;
+
+const textDisplay = document.getElementById("textDisplay");
+const input = document.getElementById("input");
+
+const levelDisplay = document.getElementById("level");
+const timeDisplay = document.getElementById("time");
+const wpmDisplay = document.getElementById("wpm");
+const accuracyDisplay = document.getElementById("accuracy");
+const scoreDisplay = document.getElementById("score");
+const progress = document.getElementById("progress");
+const message = document.getElementById("message");
+
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+
+
+// Get random text for current level
+function getRandomText() {
+
+    const words = levels[level - 1];
+
+    return words[Math.floor(Math.random() * words.length)];
+}
+
+
+// Display text with character highlighting
+function displayText() {
+
+    textDisplay.innerHTML = "";
+
+    for (let i = 0; i < currentText.length; i++) {
+
+        const span = document.createElement("span");
+
+        span.textContent = currentText[i];
+
+        if (i < input.value.length) {
+
+            if (input.value[i] === currentText[i]) {
+                span.className = "correct";
+            } else {
+                span.className = "incorrect";
+            }
+
+        } else if (i === input.value.length) {
+
+            span.className = "current";
+        }
+
+        textDisplay.appendChild(span);
+    }
+
+    updateProgress();
+}
+
+
+// Start game
+function startGame() {
+
+    level = 1;
+    score = 0;
+    mistakes = 0;
+    totalTyped = 0;
+
+    started = true;
+
+    document.getElementById("gameArea").classList.remove("hidden");
+    document.getElementById("gameOver").classList.add("hidden");
+
+    input.disabled = false;
+    input.value = "";
+
+    timeLeft = 30;
+
+    currentText = getRandomText();
+
+    levelDisplay.textContent = level;
+    scoreDisplay.textContent = score;
+    timeDisplay.textContent = timeLeft;
+
+    message.textContent = "Type the text as accurately as possible!";
+
+    displayText();
+
+    input.focus();
+
+    startTime = Date.now();
+
+    clearInterval(timer);
+
+    timer = setInterval(updateTimer, 1000);
+}
+
+
+// Timer
+function updateTimer() {
+
+    timeLeft--;
+
+    timeDisplay.textContent = timeLeft;
+
+    updateWPM();
+
+    if (timeLeft <= 0) {
+        finishGame();
+    }
+}
+
+
+// Typing event
+input.addEventListener("input", function() {
+
+    if (!started) return;
+
+    const typed = input.value;
+
+    totalTyped = typed.length;
+
+    mistakes = 0;
+
+    for (let i = 0; i < typed.length; i++) {
+
+        if (typed[i] !== currentText[i]) {
+            mistakes++;
+        }
+    }
+
+    updateAccuracy();
+    updateWPM();
+    displayText();
+
+    // Text completed
+    if (typed === currentText) {
+
+        completeText();
+    }
+});
+
+
+// Complete current text
+function completeText() {
+
+    score += (currentText.length * level);
+
+    scoreDisplay.textContent = score;
+
+    message.textContent = "? Great! Next challenge...";
+
+    // Level up after completing enough text
+    const required = level * 2;
+
+    if (!window.completedTexts) {
+        window.completedTexts = 0;
+    }
+
+    window.completedTexts++;
+
+    if (window.completedTexts >= required) {
+
+        if (level < levels.length) {
+
+            level++;
+
+            window.completedTexts = 0;
+
+            message.textContent =
+                "?? Level Up! Welcome to Level " + level;
+
+            levelDisplay.textContent = level;
+
+        } else {
+
+            finishGame();
+            return;
+        }
+    }
+
+    setTimeout(() => {
+
+        input.value = "";
+
+        currentText = getRandomText();
+
+        displayText();
+
+    }, 500);
+}
+
+
+// Accuracy
+function updateAccuracy() {
+
+    if (totalTyped === 0) {
+        accuracyDisplay.textContent = "100%";
+        return;
+    }
+
+    const accuracy =
+        Math.max(
+            0,
+            Math.round(
+                ((totalTyped - mistakes) / totalTyped) * 100
+            )
+        );
+
+    accuracyDisplay.textContent = accuracy + "%";
+}
+
+
+// WPM calculation
+function updateWPM() {
+
+    if (!startTime) return;
+
+    const elapsedMinutes =
+        (Date.now() - startTime) / 60000;
+
+    if (elapsedMinutes <= 0) return;
+
+    const words = totalTyped / 5;
+
+    const wpm = Math.round(words / elapsedMinutes);
+
+    wpmDisplay.textContent = wpm;
+}
+
+
+// Progress bar
+function updateProgress() {
+
+    if (!currentText.length) return;
+
+    const percentage =
+        Math.min(
+            100,
+            (input.value.length / currentText.length) * 100
+        );
+
+    progress.style.width = percentage + "%";
+}
+
+
+// Finish game
+function finishGame() {
+
+    clearInterval(timer);
+
+    started = false;
+
+    input.disabled = true;
+
+    updateWPM();
+
+    const best =
+        Math.max(
+            score,
+            Number(localStorage.getItem("typingBest") || 0)
+        );
+
+    localStorage.setItem("typingBest", best);
+
+    document.getElementById("gameArea").classList.add("hidden");
+    document.getElementById("gameOver").classList.remove("hidden");
+
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("bestScore").textContent = best;
+}
+
+
+// Restart
+function restartGame() {
+
+    clearInterval(timer);
+
+    window.completedTexts = 0;
+
+    document.getElementById("gameOver").classList.add("hidden");
+    document.getElementById("gameArea").classList.remove("hidden");
+
+    startGame();
+}
+
+
+startBtn.addEventListener("click", startGame);
+
+restartBtn.addEventListener("click", restartGame);
+
+
+// Allow Ctrl + Enter to restart
+document.addEventListener("keydown", function(e) {
+
+    if (e.ctrlKey && e.key === "Enter") {
+        restartGame();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
